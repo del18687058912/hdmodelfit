@@ -15,6 +15,11 @@ tvec = cfg.t(1):cfg.dt:cfg.t(2);
 nSamples = length(tvec);
 
 switch cfg.mode
+    case 0 % constant
+    
+        ahv = cfg.ahv*ones(size(tvec));
+        traj_out = tsd(tvec,ahv);
+        
     case 1 % predefined example
         
         split = floor(nSamples/2);
