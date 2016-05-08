@@ -2,8 +2,8 @@ function [ahv,hd_unwrapped] = HDtoAHV(hd)
 % function [ahv,hd_unwrapped] = HDtoAHV(hd)
 %
 
-ahv = zeros(length(hd.data)-1,1);
-d = zeros(length(hd.data)-1,1);
+ahv = zeros(1,length(hd.data)-1);
+d = zeros(1,length(hd.data)-1);
 
 for iT = 2:length(hd.data)
     
@@ -14,10 +14,10 @@ for iT = 2:length(hd.data)
 end
 
 if nargout == 2
-    d = [hd.data(1); d];
+    d = [hd.data(1) d];
     hd_unwrapped = cumsum(d);
     hd_unwrapped = tsd(hd.tvec,hd_unwrapped);
 end
 
-ahv = [0; ahv];
+ahv = [0 ahv];
 ahv = tsd(hd.tvec,ahv);
