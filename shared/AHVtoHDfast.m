@@ -37,7 +37,7 @@ minus_idx = hd_unwrapped < 0;
 hd_wrapped(minus_idx) = rem(hd_unwrapped(minus_idx),-360)+360;
 
 % shift if requested
-if ~isempty(state(5))
+if state(5) ~= 0
    shft = hd_wrapped(state(5));
    hd_temp = hd_wrapped - shft;
    
