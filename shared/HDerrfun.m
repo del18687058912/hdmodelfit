@@ -1,17 +1,13 @@
-function err = HDerrfun(in)
+function err = HDerrfun(params,obs_ahv,obs_sdf,tc)
 %
-% in(1): hd0
-% in(2): gain_left
-% in(3): gain_right
 
-global ahv tc sdf;
+internal_hd = AHVtoHDfast(obs_ahv,params);
+internal_hd = tsd(obs_ahv.tvec,internal_hd);
 
-cfg_hd = []; cfg_hd.hd0 = in(1); cfg_hd.gain = [in(2) in(3)];
-hd = AHVtoHD(cfg_hd,ahv);
+cfg = []; cfg.mode = 'interp';
+predicted_sdf = GenerateSDFfromTC(cfg,internal_hd,tc);
 
-predicted_sdf = GenerateSDFfromTC([],hd,tc);
-
-err = (predicted_sdf.data-sdf.data).^2;
-err = nansum(err(:));
+err = (predicted_sdf.data-obs_sdf.data).^2;
+err = nanmean(err(:));
 
 

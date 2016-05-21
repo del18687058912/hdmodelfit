@@ -1,4 +1,4 @@
-function hd = AHVtoHD(cfg_in,ahv)
+function [hd,hd_unwrapped] = AHVtoHD(cfg_in,ahv)
 % function hd = AHVtoHD(cfg_in,ahv)
 %
 % ahv: input AHV tsd in deg/s

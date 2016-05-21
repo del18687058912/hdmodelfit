@@ -6,6 +6,7 @@ function data_out = WillDataLoader(cfg_in,sno)
 cfg_def.dt = 1/60;
 cfg_def.columns = 'FGHI';
 cfg_def.fd = 'D:\My_Documents\Dropbox\projects\HDfit\data';
+cfg_def.ATIshift = 0; % shift HD data forward relative to spikes by this amount
 
 cfg = ProcessConfig(cfg_def,cfg_in);
 
@@ -48,6 +49,8 @@ for iF = 1:length(fn)
     data_out.(sess{iF}).fn = fn{iF};
     
     bin_idx = xlsread(fn{iF},sn{iF},'A1:A65536')';
+    bin_idx = bin_idx(1:end-cfg.ATIshift);
+    
     data_out.(sess{iF}).bin_idx = bin_idx;
      
     for iC = 1:nCells
@@ -55,12 +58,14 @@ for iF = 1:length(fn)
         this_column = cfg.columns(iC);
         this_range = cat(2,this_column,'1:',this_column,'65536');
         data_out.(sess{iF}).obs_fr(iC,:) = xlsread(fn{iF},sn{iF},this_range);
-        
+         
     end
+    data_out.(sess{iF}).obs_fr = data_out.(sess{iF}).obs_fr(:,1:end-cfg.ATIshift);
+       
     
     this_column = cfg.columns(nCells+1);
     this_range = cat(2,this_column,'1:',this_column,'65536');
-    obs_hd = xlsread(fn{iF},sn{iF},this_range);
+    obs_hd = xlsread(fn{iF},sn{iF},this_range); obs_hd = obs_hd(1+cfg.ATIshift:end);
 
     orig_tvec = (bin_idx-1)*cfg.dt;
     data_out.(sess{iF}).obs_hd = tsd(orig_tvec,obs_hd);
