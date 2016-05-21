@@ -46,8 +46,10 @@ end
 for iF = 1:length(fn)
    
     data_out.(sess{iF}).fn = fn{iF};
-    bin_idx = xlsread(fn{iF},sn{iF},'A1:A65536')';
     
+    bin_idx = xlsread(fn{iF},sn{iF},'A1:A65536')';
+    data_out.(sess{iF}).bin_idx = bin_idx;
+     
     for iC = 1:nCells
     
         this_column = cfg.columns(iC);
