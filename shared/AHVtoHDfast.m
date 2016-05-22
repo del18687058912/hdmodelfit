@@ -1,5 +1,5 @@
-function hd = AHVtoHDfast(ahv,state)
-% function hd = AHVtoHDfast(ahv,state)
+function [hd,hd_unwrapped] = AHVtoHDfast(ahv,state)
+% function [hd,hd_unwrapped] = AHVtoHDfast(ahv,state)
 %
 % ahv: input AHV tsd in deg/s
 % state is state vector, [gain_l gain_r drift hd0 hd0_idx]
