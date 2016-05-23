@@ -13,6 +13,10 @@ for iC = nCells:-1:1
     
     sdf_out(iC,:) = interp1(tc.xbin,tc.tc(iC,:),hd.data,'linear');
     
+    % hack to handle values out of range (should do circular interpolation)
+    nan_idx = find(isnan(sdf_out(iC,:)));
+    sdf_out(iC,nan_idx) = interp1(tc.xbin,tc.tc(iC,:),hd.data(nan_idx),'nearest','extrap');
+    
     if strcmp(cfg.mode,'poisson') % generate Poisson rates with lambda taken from TC
     
         len = length(hd.data);

@@ -21,10 +21,16 @@ switch sno
         nCells = 2;
         
     case 2 % WB84 3-23
-        
+        sess = {'std','laser'};
+        fn = {'WB84 3-23 s1 ST6c1 std.xls','WB84 3-23 s3 ST6c1 darklaseron.xls'};
+        sn = {'WB84 3-23 s1 ST6c1 std.txt','WB84 3-23 s3 ST6c1 darklaseron.'};
+        nCells = 1;
         
     case 3 % WB84 3-26
-        
+        sess = {'std','laser'};
+        fn = {'WB84 3-26 s1 ST3c1 ST5c1 ST8c1 std.xls','WB84 3-26 s3 ST3c1 ST5c1 ST8c1 darklaseron.xls'};
+        sn = {'WB84 3-26 s1 ST3c1 ST5c1 ST8c1 ','WB84 326 s3 ST3c1 ST5c1 ST8c1 d'};
+        nCells = 3;
         
     case 4 % WB89 7-1
         
@@ -69,7 +75,22 @@ for iF = 1:length(fn)
 
     orig_tvec = (bin_idx-1)*cfg.dt;
     data_out.(sess{iF}).obs_hd = tsd(orig_tvec,obs_hd);
+    
+    %%% HANDLE SOME SPECIAL CASES %%%
+    if sno == 3 & iF == 2
 
+        data_out.(sess{iF}) = remove_samples(data_out.(sess{iF}),[7878 7879]);
+        data_out.(sess{iF}) = remove_samples(data_out.(sess{iF}),[305 306]);
+        
+    end
 end
 
 cd(pwd);
+
+
+function data = remove_samples(data,samples_to_remove)
+
+data.obs_hd.data(samples_to_remove) = [];
+data.obs_hd.tvec(samples_to_remove) = [];
+data.obs_fr(:,samples_to_remove) = [];
+data.bin_idx(samples_to_remove) = [];

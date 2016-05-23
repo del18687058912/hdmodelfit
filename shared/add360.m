@@ -11,7 +11,7 @@ if (in1(i)+in2) > 360
 	over = (in1(i)+in2)-360;
 	out(i) = 0+over;
 elseif (in1(i)+in2) < 0
-	under = in1(i)+in2 + 360;
+	under = in1(i)+in2;
 	out(i) = 360+under;
 else
 	out(i) = in1(i)+in2;
