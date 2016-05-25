@@ -6,6 +6,10 @@ function err = HDerrfun_xval_2D(xtrain,xtest,particle_vals,obs_ahv,obs_sdf,tc,cf
 
 global param;
 global param_count;
+global param_hist;
+
+lb = [cfg_param.gain_l(1) cfg_param.gain_r(1) cfg_param.drift(1) cfg_param.hd0(1)];
+ub = [cfg_param.gain_l(end) cfg_param.gain_r(end) cfg_param.drift(end) cfg_param.hd0(end)];
 
 [~,~,train_idx] = intersect(xtrain,obs_ahv.tvec);
 [~,~,test_idx] = intersect(xtest,obs_ahv.tvec);
@@ -16,15 +20,19 @@ for iP = nP:-1:1
    err(iP) = HDerrfun_mask(particle_vals(iP,:),obs_ahv,obs_sdf,tc,train_idx);
 end
 
+% keep track of marginals
+for iDim = 1:4
+    this_hist.xbin{iDim} = cfg_param.histBins{iDim};
+    this_hist.hist{iDim} = hist(particle_vals(:,iDim),this_hist.xbin{iDim});
+end
+
+% do optimization pass with winningest particles as starting points
 if cfg_param.nKeep < nP
     [~,sort_idx] = sort(err,'ascend');
     particle_vals = particle_vals(sort_idx(1:cfg_param.nKeep),:);
 end
 
-% do optimization pass
 HDerrfunA = @(x)HDerrfun_mask(cat(2,x(1:4),0),obs_ahv,obs_sdf,tc,train_idx);
-lb = [cfg_param.gain_l(1) cfg_param.gain_r(1) cfg_param.drift(1) cfg_param.hd0(1)];
-ub = [cfg_param.gain_l(end) cfg_param.gain_r(end) cfg_param.drift(end) cfg_param.hd0(end)];
 particle_valsO = particle_vals;
 
 clear errO;
@@ -46,6 +54,7 @@ fprintf('Win gl %.4f gr %.4f d %.3f s %.2f (%.2f)\n',win_particle(1),win_particl
 
 param(param_count,:) = win_particle(1:4);
 param_count = param_count + 1;
+param_hist = this_hist;
 
 function err = HDerrfun_mask(params,obs_ahv,obs_sdf,tc,idx)
 %

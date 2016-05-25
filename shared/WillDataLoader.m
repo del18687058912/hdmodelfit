@@ -15,9 +15,9 @@ cd(cfg.fd);
 
 switch sno
     case 1 % WB84 4-15
-        sess = {'std','dark','laser'};
-        fn = {'WB84 4-15 s1 ST7 c1 ST8 c1 std.xls','WB84 4-15 s2 ST7 c1 ST8 c1 dark.xlsx','WB84 4-15 s3 ST7 c1 ST8 c1 darklaseron.xlsx'};
-        sn = {'WB84 4-15 s1 ST7 c1 ST8 c1 std.','Sheet1','Sheet1'};
+        sess = {'std','laser'};
+        fn = {'WB84 4-15 s1 ST7 c1 ST8 c1 std.xls','WB84 4-15 s3 ST7 c1 ST8 c1 darklaseron.xlsx'};
+        sn = {'WB84 4-15 s1 ST7 c1 ST8 c1 std.','Sheet1'};
         nCells = 2;
         
     case 2 % WB84 3-23
@@ -33,21 +33,40 @@ switch sno
         nCells = 3;
         
     case 4 % WB89 7-1
+        sess = {'std','laser'};
+        fn = {'WB89 7-1p s1 ST7c1 std.xls','WB89 7-1p s3 ST7c1 darklaseron.xls'};
+        sn = {'WB89 7-1p s1 ST7c1 std.txt','WB89 7-1p s3 ST7c1 darklaseron.'};
+        nCells = 1;
         
     case 5 % WB89 7-2
+        sess = {'std','laser'};
+        fn = {'WB89 7-2 s1 ST7c1 std.xls','WB89 7-2p s2 ST7c1 darklaseron.xls'};
+        sn = {'WB89 7-2 s1 ST7c1 std.txt','WB89 7-2p s2 ST7c1 darklaseron.'};
+        nCells = 1;
         
     case 6 % WB89 7-7
-        
+        sess = {'std','laser'};
+        fn = {'WB89 7-7 s1 ST7c1 std.xls','WB89 7-7 s4 ST7c1 darklaseron.xls'};
+        sn = {'WB89 7-7 s1 ST7c1 std.txt','WB89 7-7 s4 ST7c1 darklaseron.t'};
+        nCells = 1;
         
     case 7 % WB95 8-28
+        sess = {'std','laser'};
+        fn = {'WB95 8-28p s1 ST7c1 std.xls','WB95 8-28p s3 ST7c1 darklaseron.xls'};
+        sn = {'WB95 8-28p s1 ST7c1 std.txt','WB95 8-28p s3 ST7c1 darklaseron'};
+        nCells = 2;
         
     case 8 % WB95 9-1
-        sess = {'dark','laser'};
-        fn = {'WB95 9-1 s2 ST1c1 ST8c1 dark.xls','WB95 9-1 s3 ST1c1 ST8c1 darklaseron.xls'};
-        sn = {'WB95 9-1 s2 ST1c1 ST8c1 dark.tx','WB95 9-1 s3 ST1c1 ST8c1 darklas'};
+        sess = {'std','laser'};
+        fn = {'WB95 9-1 s1 ST1c1 ST8c1 std.xls','WB95 9-1 s3 ST1c1 ST8c1 darklaseron.xls'};
+        sn = {'WB95 9-1 s1 ST1c1 ST8c1 std.txt','WB95 9-1 s3 ST1c1 ST8c1 darklas'};
         nCells = 2;
-    case 9 % WB95 9-7
         
+    case 9 % WB95 9-7
+        sess = {'std','laser'};
+        fn = {'WB95 9-6 s1 ST7c1 ST8c2 std.xls','WB95 9-7 s2 ST7c1 ST8c2 darklaseron.xls'};
+        sn = {'WB95 9-6 s1 ST7c1 ST8c2 std.txt','WB95 9-7 s2 ST7c1 ST8c2 darklas'};
+        nCells = 2;
         
     case 10 % WB85 3-22
         sess = {'std','laser'};
@@ -96,13 +115,17 @@ for iF = 1:length(fn)
     data_out.(sess{iF}).obs_hd = tsd(orig_tvec,obs_hd);
     
     %%% HANDLE SOME SPECIAL CASES %%%
-    if sno == 3 & iF == 2
+    if sno == 3 & iF == 2 % remove some troublesome VT samples which trip up the kalman filters
 
         data_out.(sess{iF}) = remove_samples(data_out.(sess{iF}),[7878 7879]);
         data_out.(sess{iF}) = remove_samples(data_out.(sess{iF}),[305 306]);
         
     end
     
+    if sno == 11 % throw out cells with strange tuning
+        data_out.(sess{iF}).obs_fr = data_out.(sess{iF}).obs_fr([1 4],:);
+    end
+        
 end
 
 cd(pwd);

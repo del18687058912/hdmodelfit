@@ -12,6 +12,7 @@ cfg_master = ProcessConfig(cfg_def,cfg_in);
 
 global param; % to access internals of crossval()
 global param_count;
+global param_hist;
 
 %% cfg
 cfg_master.subsample_factor = 7;
@@ -151,17 +152,17 @@ model(1).label = 'M0: fixed gain and drift';
 
 model(2).gain_l = 1;
 model(2).gain_r = 1;
-model(2).drift = -1:0.25:1;
+model(2).drift = -1.5:0.25:1.5;
 model(2).label = 'M1: fixed gain';
 
-model(3).gain_l = 0.95:0.025:1.1;
-model(3).gain_r = 0.95:0.025:1.1;
+model(3).gain_l = 0.9:0.025:1.1;
+model(3).gain_r = 0.9:0.025:1.1;
 model(3).drift = 0;
 model(3).label = 'M2: fixed drift';
 
-model(4).gain_l = 0.95:0.025:1.1;
-model(4).gain_r = 0.95:0.025:1.1;
-model(4).drift = -1:0.25:1;
+model(4).gain_l = 0.9:0.025:1.1;
+model(4).gain_r = 0.9:0.025:1.1;
+model(4).drift = -1.5:0.25:1.5;
 model(4).label = 'M3: full model';
 
 clear err all_param;
@@ -174,6 +175,9 @@ for iM = 1:length(model)
     ref_hd0 = data.(cfg_param.target_session).hd_ss.data(1);
     cfg_param.hd0 = ref_hd0-30:10:ref_hd0+30;
     %cfg_param.hd0 = ref_hd0;
+    
+    cfg_param.histBins{1} = model(4).gain_l; cfg_param.histBins{2} = model(4).gain_r;
+    cfg_param.histBins{3} = model(4).drift; cfg_param.histBins{4} = cfg_param.hd0;
     
     % obtain correctly shifted tuning curves - matching first segment of target
     % session (should check that looks OK)
@@ -206,15 +210,17 @@ for iM = 1:length(model)
     
     opts = statset; opts.UseParallel = 'true';
     
-    param = []; param_count = 1;
+    param = []; param_count = 1; param_hist = [];
     err(iM,:) = crossval(predfun,this_ahv.tvec','kfold',10,'mcreps',1,'options',opts);
     
     fprintf('%s %s, err %.2f +/- %.2f\n',cfg_param.target_session,model(iM).label,nanmean(err(iM,:)),nanstd(err(iM,:)));
     all_param{iM} = param;
+    all_param_hist{iM} = param_hist;
     
 end % of loop over models
 
 out.err = err;
 out.param = all_param;
+out.param_hist = param_hist;
 out.model = model;
 out.target_fn = data.(cfg_param.target_session).fn;
