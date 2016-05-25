@@ -8,7 +8,7 @@ cfg_def.dt = 1/60;
 cfg_def.smoothwin = 11;
 cfg_def.subsample_factor = 7;
 cfg_def.debug = 0;
-cfg_def.mode = 'kalman'; % 'smooth', 'kalman'
+cfg_def.mode = 'kalman'; % 'smooth', 'kalman', 'kalmanwrapped'
 
 cfg = ProcessConfig(cfg_def,cfg_in);
 
@@ -28,7 +28,9 @@ for iF = 1:length(fnames)
             hd_unwrapped_interp = interp1(hd_unwrapped.tvec,hd_unwrapped.data,tvec_interp,'linear');
             hd_unwrapped_interp = medfilt1(hd_unwrapped_interp,cfg.smoothwin);
             hd_unwrapped_interp = smooth(hd_unwrapped_interp,cfg.smoothwin); % why does this take so long?
-            hd = wrapHD(hd_unwrapped_interp.data);
+            
+            hd_unwrapped_interp = tsd(tvec_interp,hd_unwrapped_interp);
+            hd = wrapHD(hd_unwrapped_interp.data)';
             
         case 'kalman'
             hd_raw = nan(size(tvec_interp));
@@ -39,9 +41,11 @@ for iF = 1:length(fnames)
             hd_estR = generic_kalman([],hd_raw(end:-1:1));
             
             hd_unwrapped_interp = nanmean(cat(1,hd_est,hd_estR(end:-1:1)))';
-            hd = wrapHD(hd_unwrapped_interp.data);
-    
-        case 'kalman-wrapped'
+            
+            hd_unwrapped_interp = tsd(tvec_interp,hd_unwrapped_interp);
+            hd = wrapHD(hd_unwrapped_interp.data)';
+            
+        case 'kalmanwrapped'
             hd_raw = nan(size(tvec_interp));
             [~,keep_idx,~] = intersect(tvec_interp,hd_unwrapped.tvec);
             hd_raw(keep_idx) = this_data.obs_hd.data;
@@ -49,7 +53,7 @@ for iF = 1:length(fnames)
             dt = 1/60;
             
             % initial state
-            x0 = [x_obs(1); (diffang_rad(x_obs(30),x_obs(1)))*2; 0]; % assumes 60 samples/s
+            x0 = [nanmedian(x_obs(1:10)); (diffang_rad(nanmedian(x_obs(28:32)),nanmedian(x_obs(1:10))))*2; 0]; % assumes 60 samples/s
             
             % state transition matrix
             A = [1 dt dt^2/2;
@@ -65,7 +69,7 @@ for iF = 1:length(fnames)
             
             z = wkf(x_obs,A,Cx,cy,x0); % forward pass
 
-            x0 = [x_obs(end); (diffang_rad(x_obs(end),x_obs(end-30)))*2; 0];
+            x0 = [nanmedian(x_obs(end:-1:end-9)); (diffang_rad(x_obs(end),nanmedian(x_obs(end-32:end-28))))*2; 0]; % nanmedian to avoid NaNs...
             zRev = wkf(x_obs(end:-1:1),A,Cx,cy,x0); % reverse pass
             
             zRev = zRev(1,end:-1:1);
@@ -76,9 +80,10 @@ for iF = 1:length(fnames)
             end
             hd = hd*(180/pi)+180;
             
-            
         otherwise
             error('Unknown mode.');
+            
+            
     end
     
     hd = tsd(tvec_interp,hd);

@@ -4,6 +4,9 @@ function err = HDerrfun_xval_2D(xtrain,xtest,particle_vals,obs_ahv,obs_sdf,tc,cf
 % xtrain: timestamps to fit model with
 % xtest: timestamps to test model fit on (obtain yfit)
 
+global param;
+global param_count;
+
 [~,~,train_idx] = intersect(xtrain,obs_ahv.tvec);
 [~,~,test_idx] = intersect(xtest,obs_ahv.tvec);
 
@@ -41,6 +44,8 @@ win_particle = particle_valsO(win_idx,:);
 err = HDerrfun_mask(win_particle,obs_ahv,obs_sdf,tc,test_idx);
 fprintf('Win gl %.4f gr %.4f d %.3f s %.2f (%.2f)\n',win_particle(1),win_particle(2),win_particle(3),win_particle(4),err);
 
+param(param_count,:) = win_particle(1:4);
+param_count = param_count + 1;
 
 function err = HDerrfun_mask(params,obs_ahv,obs_sdf,tc,idx)
 %

@@ -4,7 +4,7 @@ function data_out = WillDataLoader(cfg_in,sno)
 % data inventory and loader
 
 cfg_def.dt = 1/60;
-cfg_def.columns = 'FGHI';
+cfg_def.columns = 'FGHIJ';
 cfg_def.fd = 'D:\My_Documents\Dropbox\projects\HDfit\data';
 cfg_def.ATIshift = 0; % shift HD data forward relative to spikes by this amount
 
@@ -48,6 +48,25 @@ switch sno
         nCells = 2;
     case 9 % WB95 9-7
         
+        
+    case 10 % WB85 3-22
+        sess = {'std','laser'};
+        fn = {'WB85 3-22 s1 ST6c2 std.xls','WB85 3-22 s3 ST6c2 darklaseron.xls'};
+        sn = {'WB85 3-22 s1 ST6c2 std.txt','WB85 3-22 s3 ST6c2 darklaseron.'};
+        nCells = 1;
+        
+    case 11 % WB85 3-23
+        sess = {'std','laser'};
+        fn = {'WB85 3-23 s1 ST8c1c2c3c4 std.xls','WB85 3-23 s3 ST8c1c2c3c4 darklaseron.xls'};
+        sn = {'WB85 3-23 s1 ST8c1c2c3c4 std.tx','WB85 3-23 s3 ST8c1c2c3c4 darkla'};
+        nCells = 4;
+        
+    case 12 % WB85 3-26
+        sess = {'std','laser'};
+        fn = {'WB85 3-26 s1 ST5c1 std.xls','WB85 3-26 s3 ST5c1 darklaseron.xls'};
+        sn = {'WB85 3-26 s1 ST5c1 std.txt','WB85 3-26 s3 ST5c1 darklaseron.'};
+        nCells = 1;
+        
 end
 
 for iF = 1:length(fn)
@@ -83,6 +102,7 @@ for iF = 1:length(fn)
         data_out.(sess{iF}) = remove_samples(data_out.(sess{iF}),[305 306]);
         
     end
+    
 end
 
 cd(pwd);
