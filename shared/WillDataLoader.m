@@ -86,6 +86,24 @@ switch sno
         sn = {'WB85 3-26 s1 ST5c1 std.txt','WB85 3-26 s3 ST5c1 darklaseron.'};
         nCells = 1;
         
+    case 13 % WB76 2-9
+        sess = {'std','laser'};
+        fn = {'WB76 2-9 s1 ST6c1c2 std.xls','WB76 2-9 s3 ST6c1c2 darklaseron.xls'};
+        sn = {'WB76 2-9 s1 ST6c1c2 std.txt','WB76 2-9 s3 ST6c1c2 darklaseron'};
+        nCells = 2;
+        
+    case 14 % WB76 2-9p
+        sess = {'std','laser'};
+        fn = {'WB76 2-9pm s1 ST6c1c2 std.xls','WB76 2-9pm s3 ST6c1c2 darklaseron.xls'};
+        sn = {'WB76 2-9pm s1 ST6c1c2 std.txt','WB76 2-9pm s3 ST6c1c2 darklaser'};
+        nCells = 2;
+        
+    case 15 % WB76 2-10
+        sess = {'std','laser'};
+        fn = {'WB76 2-10 s3 ST6c1 std2.xls','WB76 2-10 s5 ST6c1 darklaseron.xls'};
+        sn = {'WB76 2-10 s3 ST6c1 std2.txt','WB76 2-10 s5 ST6c1 darklaseron.'};
+        nCells = 1;
+        
 end
 
 for iF = 1:length(fn)

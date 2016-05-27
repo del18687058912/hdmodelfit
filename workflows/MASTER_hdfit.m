@@ -17,7 +17,7 @@ param_count = 0;
 
 clear ALL_out;
 
-sessions_to_run = 5;% 12];
+sessions_to_run = 1:12;
 targets_to_run = {'laser','std'};
 %filters_to_run = {'smooth','kalman','kalmanwrapped'};
 filters_to_run = {'smooth','kalman','kalmanwrapped'};

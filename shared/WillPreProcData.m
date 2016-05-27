@@ -53,7 +53,9 @@ for iF = 1:length(fnames)
             dt = 1/60;
             
             % initial state
-            x0 = [nanmedian(x_obs(1:10)); (diffang_rad(nanmedian(x_obs(28:32)),nanmedian(x_obs(1:10))))*2; 0]; % assumes 60 samples/s
+            v0 = diffang_rad(nanmedian(x_obs(24:37)),nanmedian(x_obs(1:10)))*2; % starting velocity
+            if isnan(v0), v0 = 0; end
+            x0 = [nanmedian(x_obs(1:10)); v0; 0]; % assumes 60 samples/s
             
             % state transition matrix
             A = [1 dt dt^2/2;
@@ -69,7 +71,10 @@ for iF = 1:length(fnames)
             
             z = wkf(x_obs,A,Cx,cy,x0); % forward pass
 
-            x0 = [nanmedian(x_obs(end:-1:end-9)); (diffang_rad(x_obs(end),nanmedian(x_obs(end-32:end-28))))*2; 0]; % nanmedian to avoid NaNs...
+            v0 = diffang_rad(x_obs(end),nanmedian(x_obs(end-36:end-24)))*2; % starting velocity
+            if isnan(v0), v0 = 0; end
+            
+            x0 = [nanmedian(x_obs(end:-1:end-9)); v0; 0]; % nanmedian to avoid NaNs...
             zRev = wkf(x_obs(end:-1:1),A,Cx,cy,x0); % reverse pass
             
             zRev = zRev(1,end:-1:1);
