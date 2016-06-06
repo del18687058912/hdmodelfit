@@ -21,9 +21,26 @@ for iP = nP:-1:1
 end
 
 % keep track of marginals
+clear this_errByBin;
 for iDim = 1:4
-    this_hist.xbin{iDim} = cfg_param.histBins{iDim};
-    this_hist.hist{iDim} = hist(particle_vals(:,iDim),this_hist.xbin{iDim});
+    this_hist.xcenters{iDim} = cfg_param.histBins{iDim};
+    d = median(diff(this_hist.xcenters{iDim}));
+    this_hist.xedges{iDim} = this_hist.xcenters{iDim}(1)-d/2:d:this_hist.xcenters{iDim}(end)+d/2;
+    
+    [~,particle_idx] = histc(particle_vals(:,iDim),this_hist.xedges{iDim});
+    
+    % now compute average error in each bin
+    for iB = 1:length(this_hist.xcenters{iDim})
+        
+        this_idx = find(particle_idx == iB);
+        if isempty(this_idx) % no particles for this bin
+            this_errByBin{iDim}(iB) = NaN;
+        else
+            this_errByBin{iDim}(iB) = nanmean(err(this_idx));
+        end
+            
+    end % of bins
+    
 end
 
 % do optimization pass with winningest particles as starting points
@@ -53,8 +70,8 @@ err = HDerrfun_mask(win_particle,obs_ahv,obs_sdf,tc,test_idx);
 fprintf('Win gl %.4f gr %.4f d %.3f s %.2f (%.2f)\n',win_particle(1),win_particle(2),win_particle(3),win_particle(4),err);
 
 param(param_count,:) = win_particle(1:4);
+param_hist{param_count} = this_errByBin;
 param_count = param_count + 1;
-param_hist = this_hist;
 
 function err = HDerrfun_mask(params,obs_ahv,obs_sdf,tc,idx)
 %

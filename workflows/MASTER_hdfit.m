@@ -1,9 +1,11 @@
 %%
 clear all; clear global; pack
-addpath('D:\My_Documents\GitHub\hdmodelfit\shared');
-%addpath('C:\Users\mvdm\Documents\GitHub\hdmodelfit\shared'); % isidro
+%addpath('D:\My_Documents\GitHub\hdmodelfit\shared');
+addpath('C:\Users\mvdm\Documents\GitHub\hdmodelfit\shared'); % isidro
 
-cd('D:\My_Documents\Dropbox\projects\HDfit\data');
+%datapath = 'D:\My_Documents\Dropbox\projects\HDfit\data';
+datapath = 'C:\Users\mvdm\Dropbox\projects\HDfit\data';
+cd(datapath);
 
 %% test
 global param; % to access internals of crossval();
@@ -19,8 +21,9 @@ clear ALL_out;
 
 sessions_to_run = 1:12;
 targets_to_run = {'laser','std'};
-%filters_to_run = {'smooth','kalman','kalmanwrapped'};
-filters_to_run = {'smooth','kalman','kalmanwrapped'};
+%targets_to_run = {'std'};
+filters_to_run = {'smooth','kalmanwrapped'};
+%filters_to_run = {'smooth'}%,'kalman','kalmanwrapped'};
 
 for iS = length(sessions_to_run):-1:1
     
@@ -36,6 +39,9 @@ for iS = length(sessions_to_run):-1:1
             this_cfg.session = sessions_to_run(iS);
             this_cfg.target_session = targets_to_run{iT};
             this_cfg.mode = filters_to_run{iF};
+            this_cfg.datapath = datapath;
+            this_cfg.gainbin_centers = 0.9:0.025:1.1;
+            this_cfg.driftbin_centers = -1.5:0.25:1.5;
             
             this_out = hdfit_crossval_func(this_cfg);
             

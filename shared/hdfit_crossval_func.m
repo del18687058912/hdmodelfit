@@ -6,6 +6,8 @@ cfg_def.session = 3; % which session to load
 cfg_def.mode = 'kalmanwrapped'; % 'kalmanwrapped', 'smooth', 'kalman'
 cfg_def.debug = 0;
 cfg_def.target_session = 'std'; % 'std', 'laser'
+cfg_def.gainbin_centers = 0.9:0.025:1.1;
+cfg_def.driftbin_centers = -1.5:0.25:1.5;
 
 cfg_master = ProcessConfig(cfg_def,cfg_in);
 
@@ -152,20 +154,20 @@ model(1).label = 'M0: fixed gain and drift';
 
 model(2).gain_l = 1;
 model(2).gain_r = 1;
-model(2).drift = -1.5:0.25:1.5;
+model(2).drift = cfg_master.driftbin_centers;
 model(2).label = 'M1: fixed gain';
 
-model(3).gain_l = 0.9:0.025:1.1;
-model(3).gain_r = 0.9:0.025:1.1;
+model(3).gain_l = cfg_master.gainbin_centers;
+model(3).gain_r = cfg_master.gainbin_centers;
 model(3).drift = 0;
 model(3).label = 'M2: fixed drift';
 
-model(4).gain_l = 0.9:0.025:1.1;
-model(4).gain_r = 0.9:0.025:1.1;
-model(4).drift = -1.5:0.25:1.5;
+model(4).gain_l = cfg_master.gainbin_centers;
+model(4).gain_r = cfg_master.gainbin_centers;
+model(4).drift = cfg_master.driftbin_centers;
 model(4).label = 'M3: full model';
 
-clear err all_param;
+clear err all_param all_wraperr;
 for iM = 1:length(model)
 
     cfg_param.gain_l = model(iM).gain_l;
@@ -217,10 +219,44 @@ for iM = 1:length(model)
     all_param{iM} = param;
     all_param_hist{iM} = param_hist;
     
+    % now compute expected HD PFD changes (error) for gain and drift
+    % estimates
+    cfg_hd = []; cfg_hd.hd0 = ref_hd0;
+    [~,true_hd_unwrapped] = AHVtoHD(cfg_hd,this_ahv);
+    clear this_err_drift this_err_gain this_err_both;
+    for iFold = 1:size(param,1) % param struct holds 
+        
+        cfg_hd = []; cfg_hd.hd0 = param(iFold,4);
+        cfg_hd.gain = [param(iFold,1) param(iFold,2)];
+        [~,this_hd_unwrapped] = AHVtoHD(cfg_hd,this_ahv);
+        this_err_gain(iFold) = true_hd_unwrapped(end)-this_hd_unwrapped(end);
+        
+        cfg_hd = []; cfg_hd.hd0 = param(iFold,4);
+        cfg_hd.drift = param(iFold,3);
+        [~,this_hd_unwrapped] = AHVtoHD(cfg_hd,this_ahv);
+        this_err_drift(iFold) = true_hd_unwrapped(end)-this_hd_unwrapped(end);
+        
+        cfg_hd = []; cfg_hd.hd0 = param(iFold,4);
+        cfg_hd.gain = [param(iFold,1) param(iFold,2)];
+        [~,this_hd_unwrapped] = AHVtoHD(cfg_hd,this_ahv);
+        this_err_gain(iFold) = true_hd_unwrapped(end)-this_hd_unwrapped(end);
+        
+        cfg_hd = []; cfg_hd.hd0 = param(iFold,4);
+        cfg_hd.gain = [param(iFold,1) param(iFold,2)];
+        cfg_hd.drift = param(iFold,3);
+        [~,this_hd_unwrapped] = AHVtoHD(cfg_hd,this_ahv);
+        this_err_both(iFold) = true_hd_unwrapped(end)-this_hd_unwrapped(end);
+        
+    end
+    all_wraperr{iM} = cat(1,this_err_gain,this_err_drift,this_err_both);
+    all_wraperr{iM} = nanmean(all_wraperr{iM},2); % avg over folds
+    
 end % of loop over models
 
 out.err = err;
+out.wraperr = all_wraperr;
 out.param = all_param;
-out.param_hist = param_hist;
+out.param_hist = all_param_hist; % this has two layers of cells -- different models, and dimensions
 out.model = model;
 out.target_fn = data.(cfg_param.target_session).fn;
+out.histBinCenters = cfg_param.histBins;
