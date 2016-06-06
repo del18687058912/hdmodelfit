@@ -54,7 +54,7 @@ switch sno
         sess = {'std','laser'};
         fn = {'WB95 8-28p s1 ST7c1 std.xls','WB95 8-28p s3 ST7c1 darklaseron.xls'};
         sn = {'WB95 8-28p s1 ST7c1 std.txt','WB95 8-28p s3 ST7c1 darklaseron'};
-        nCells = 2;
+        nCells = 1;
         
     case 8 % WB95 9-1
         sess = {'std','laser'};
