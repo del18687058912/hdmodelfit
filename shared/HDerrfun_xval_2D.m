@@ -46,7 +46,12 @@ end
 % do optimization pass with winningest particles as starting points
 if cfg_param.nKeep < nP
     [~,sort_idx] = sort(err,'ascend');
-    particle_vals = particle_vals(sort_idx(1:cfg_param.nKeep),:);
+    if cfg_param.addRandom
+        rand_idx = randperm(nP); rand_idx = rand_idx(1:cfg_param.nKeep);
+        particle_vals = particle_vals(unique([sort_idx(1:cfg_param.nKeep) rand_idx]),:);
+    else
+        particle_vals = particle_vals(sort_idx(1:cfg_param.nKeep),:);
+    end
 end
 
 HDerrfunA = @(x)HDerrfun_mask(cat(2,x(1:4),0),obs_ahv,obs_sdf,tc,train_idx);

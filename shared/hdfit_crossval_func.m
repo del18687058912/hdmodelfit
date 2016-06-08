@@ -204,6 +204,7 @@ for iM = 1:length(model)
     this_sdf = data.(cfg_param.target_session).sdf_ss;
     
     cfg_param.nKeep = 10; % number of particles to keep for optimization after initial sweep
+    cfg_param.addRandom = 0; % if 1, also choose random particles to keep for optimization
     predfun = @(xtrain,xtest)HDerrfun_xval_2D(xtrain,xtest,particle_vals,this_ahv,this_sdf,cfg_param.tc,cfg_param);
     
     %xtrain = data.(cfg_param.target_session).ahv_ss.tvec(1:end-500)';
