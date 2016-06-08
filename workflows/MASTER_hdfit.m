@@ -19,11 +19,11 @@ param_count = 0;
 
 clear ALL_out;
 
-sessions_to_run = 1:12;
-targets_to_run = {'laser','std'};
+sessions_to_run = 3;%1:12;
+targets_to_run = {'laser'};
 %targets_to_run = {'std'};
-filters_to_run = {'smooth','kalmanwrapped'};
-%filters_to_run = {'smooth'}%,'kalman','kalmanwrapped'};
+%filters_to_run = {'smooth','kalmanwrapped'};
+filters_to_run = {'kalmanwrapped'}%,'kalman','kalmanwrapped'};
 
 for iS = length(sessions_to_run):-1:1
     
@@ -42,6 +42,8 @@ for iS = length(sessions_to_run):-1:1
             this_cfg.datapath = datapath;
             this_cfg.gainbin_centers = 0.9:0.025:1.1;
             this_cfg.driftbin_centers = -1.5:0.25:1.5;
+            this_cfg.simparams = [1 1 0.5]; % leave empty to use real data, spec [g_l g_r d] for simulated data
+            this_cfg.models = 4;
             
             this_out = hdfit_crossval_func(this_cfg);
             

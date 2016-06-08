@@ -92,6 +92,7 @@ for iF = 1:length(fnames)
     end
     
     hd = tsd(tvec_interp,hd);
+    ahv = HDtoAHV(hd);
     
     if cfg.debug
         %% could consider kalman filter instead of smoothing + linear interpolation... but this looks ok for now
@@ -112,6 +113,7 @@ for iF = 1:length(fnames)
     ahv_ss = HDtoAHV(hd_ss);
     
     data.(fnames{iF}).ahv_ss = ahv_ss;
+    data.(fnames{iF}).ahv = ahv;
     data.(fnames{iF}).hd_ss = hd_ss;
     
 end

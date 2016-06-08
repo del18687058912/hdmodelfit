@@ -8,6 +8,8 @@ cfg_def.debug = 0;
 cfg_def.target_session = 'std'; % 'std', 'laser'
 cfg_def.gainbin_centers = 0.9:0.025:1.1;
 cfg_def.driftbin_centers = -1.5:0.25:1.5;
+cfg_def.simparams = []; % if specified, use simulated data
+cfg_def.models = 1:4; % models to run
 
 cfg_master = ProcessConfig(cfg_def,cfg_in);
 
@@ -107,44 +109,105 @@ for iF = 1:length(fnames)
             end
             
             data.(fnames{iF}).tc_seg{iSeg} = this_tc.tc;
-        end
+            
+            % if laser session, compute shifts relative to std session
+            if strcmp(fnames{iF},'laser')
+                [tc_corr,tc_shift] = TCcorr(data.std.tc.tc,data.(fnames{iF}).tc_seg{iSeg});
+                data.(fnames{iF}).tc_segcorr(iSeg) = tc_corr;
+                data.(fnames{iF}).tc_segshift(iSeg) = tc_shift;
+            end
+            
+        end    
         
     end
 end
 
-close all;
 %% generate synthetic firing rates based on TCs from specified session
 % with known gain, drift parameters
 % used for parameter recovery analysis
 % NOTE assumes we know internal HD at start of session!
-cfg_sim = [];
-cfg_sim.params = [1 1 0]; % gain_left, gain_right, drift
-cfg_sim.sourceTC = 'std'; % which TCs to use
-for iF = 1:length(fnames)
+if ~isempty(cfg_master.simparams)
     
-    cfg_sim.hd0 = data.(fnames{iF}).hd_ss.data(1);
-    cfg_sim.hd0_idx = 0; % don't shift tuning curves, take as is
-    
-    sim_internal_hd = AHVtoHDfast(data.(fnames{iF}).ahv_ss,cat(2,cfg_sim.params,cfg_sim.hd0,cfg_sim.hd0_idx));
-    sim_internal_hd = tsd(data.(fnames{iF}).ahv_ss.tvec,sim_internal_hd);
-    
-    data.(fnames{iF}).sim_sdf_ss = GenerateSDFfromTC([],sim_internal_hd,data.(cfg_sim.sourceTC).tc);
-    
-    % compute TC shifts relative to source session
-    for iSeg = 1:cfg_tc.nseg
+    cfg_sim = [];
+    cfg_sim.params = cfg_master.simparams; % gain_left, gain_right, drift
+    cfg_sim.sourceTC = 'std'; % which TCs to use
+    for iF = 1:length(fnames)
         
-        [tc_corr,tc_shift] = TCcorr(data.(cfg_sim.sourceTC).tc.tc,data.(fnames{iF}).tc_seg{iSeg});
-        data.(fnames{iF}).tc_segcorr(iSeg) = tc_corr;
-        data.(fnames{iF}).tc_segshift(iSeg) = tc_shift;
+        cfg_sim.hd0 = data.(fnames{iF}).hd.data(1);
+        cfg_sim.hd0_idx = 0; % don't shift tuning curves, take as is
+        
+        sim_internal_hd = AHVtoHDfast(data.(fnames{iF}).ahv,cat(2,cfg_sim.params,cfg_sim.hd0,cfg_sim.hd0_idx));
+        sim_internal_hd = tsd(data.(fnames{iF}).ahv.tvec,sim_internal_hd);
+        
+        data.(fnames{iF}).sim_sdf = GenerateSDFfromTC([],sim_internal_hd,data.(cfg_sim.sourceTC).tc);
+        
+        data.(fnames{iF}).sim_sdf_ss = data.(fnames{iF}).sim_sdf;
+        data.(fnames{iF}).sim_sdf_ss.tvec = data.(fnames{iF}).sim_sdf_ss.tvec(1:cfg_master.subsample_factor:end);
+        data.(fnames{iF}).sim_sdf_ss.data = data.(fnames{iF}).sim_sdf_ss.data(:,1:cfg_master.subsample_factor:end);
         
     end
-    
+end
+%% tuning curves from simulated SDFs
+if ~isempty(cfg_master.simparams)
+    for iF = 1:length(fnames)
+        
+        tc = TuningCurvesSDF(cfg_tc,data.(fnames{iF}).sim_sdf,data.(fnames{iF}).hd);
+        tc.xbin = cfg_tc.bin_centers;
+        
+        data.(fnames{iF}).tc_sim = tc;
+        
+        % plot overall and short time segment TCs
+        if cfg_master.debug
+            figure;
+            subplot(221);
+            plot(tc.xbin,tc.tc'); xlim([0 360]);
+            title(fnames{iF});
+            cmap = colormap(jet);
+        end
+        
+        nCells = size(data.(fnames{iF}).obs_fr,1);
+        
+        for iC = 1:nCells
+            
+            if cfg_master.debug
+                subplot(2,2,1+iC);
+            end
+            
+            seg = linspace(data.(fnames{iF}).sim_sdf.tvec(1),data.(fnames{iF}).sim_sdf.tvec(end),cfg_tc.nseg+1);
+            
+            for iSeg = 1:cfg_tc.nseg
+                this_sdf = restrict(data.(fnames{iF}).sim_sdf,seg(iSeg),seg(iSeg+1));
+                this_hd = restrict(data.(fnames{iF}).hd,seg(iSeg),seg(iSeg+1));
+                this_tc = TuningCurvesSDF(cfg_tc,this_sdf,this_hd);
+                
+                if cfg_master.debug
+                    plot(tc.xbin,this_tc.tc(iC,:)','Color',cmap(round(iSeg*(64/cfg_tc.nseg)),:)); xlim([0 360]);
+                    hold on;
+                end
+                
+                data.(fnames{iF}).tc_seg_sim{iSeg} = this_tc.tc;
+                
+                % if laser session, compute shifts relative to std session
+                if strcmp(fnames{iF},'laser')
+                    [tc_corr,tc_shift] = TCcorr(data.std.tc.tc,data.(fnames{iF}).tc_seg_sim{iSeg});
+                    data.(fnames{iF}).tc_segcorr_sim(iSeg) = tc_corr;
+                    data.(fnames{iF}).tc_segshift_sim(iSeg) = tc_shift;
+                end
+            end
+            
+        end
+    end
 end
 
 %% direct approach -- compute goodness of fit for various parameter combinations
 cfg_param.target_session = cfg_master.target_session; % fit data from this session
 cfg_param.reference_session = 'std'; % get TCs from here
-cfg_param.data_to_fit = 'sdf_ss'; % sdf_ss (actual spiking data) or sim_sdf_ss (simulated)
+
+if isempty(cfg_master.simparams)
+    cfg_param.data_to_fit = 'sdf_ss'; % sdf_ss (actual spiking data) or sim_sdf_ss (simulated)
+else
+    cfg_param.data_to_fit = 'sim_sdf_ss'; % sdf_ss (actual spiking data) or sim_sdf_ss (simulated)
+end
 
 clear model;
 model(1).gain_l = 1;
@@ -168,7 +231,7 @@ model(4).drift = cfg_master.driftbin_centers;
 model(4).label = 'M3: full model';
 
 clear err all_param all_wraperr;
-for iM = 1:length(model)
+for iM = cfg_master.models
 
     cfg_param.gain_l = model(iM).gain_l;
     cfg_param.gain_r = model(iM).gain_r;
@@ -183,12 +246,18 @@ for iM = 1:length(model)
     
     % obtain correctly shifted tuning curves - matching first segment of target
     % session (should check that looks OK)
-    cfg_param.tc.tc = circshift(data.(cfg_param.reference_session).tc.tc,[0 data.(cfg_param.target_session).tc_segshift(1)]);
-    cfg_param.tc.xbin = data.(cfg_param.reference_session).tc.xbin;
+    switch cfg_param.data_to_fit
+        case 'sdf_ss'
+            cfg_param.tc.tc = circshift(data.(cfg_param.reference_session).tc.tc,[0 data.(cfg_param.target_session).tc_segshift(1)]);
+            cfg_param.tc.xbin = data.(cfg_param.reference_session).tc.xbin;
+        case 'sim_sdf_ss'
+            cfg_param.tc.tc = circshift(data.(cfg_param.reference_session).tc.tc,[0 data.(cfg_param.target_session).tc_segshift_sim(1)]);
+            cfg_param.tc.xbin = data.(cfg_param.reference_session).tc.xbin;
+    end
     
     %plot(cfg_param.tc.xbin,cfg_param.tc.tc')
     %figure;
-    %plot(cfg_param.tc.xbin,data.(cfg_param.target_session).tc_seg{1}')
+    %plot(cfg_param.tc.xbin,data.(cfg_param.target_session).tc_seg_sim{1}')
     
     % generate param combos (particles) to test
     [p,q,v,r,s] = ndgrid(cfg_param.gain_l,cfg_param.gain_r,cfg_param.drift,cfg_param.hd0,0);
@@ -201,8 +270,8 @@ for iM = 1:length(model)
     % need: Yfit for excluded points Xtest
     
     this_ahv = data.(cfg_param.target_session).ahv_ss;
-    this_sdf = data.(cfg_param.target_session).sdf_ss;
-    
+    this_sdf = data.(cfg_param.target_session).(cfg_param.data_to_fit);
+
     cfg_param.nKeep = 10; % number of particles to keep for optimization after initial sweep
     predfun = @(xtrain,xtest)HDerrfun_xval_2D(xtrain,xtest,particle_vals,this_ahv,this_sdf,cfg_param.tc,cfg_param);
     
@@ -250,6 +319,45 @@ for iM = 1:length(model)
     end
     all_wraperr{iM} = cat(1,this_err_gain,this_err_drift,this_err_both);
     all_wraperr{iM} = nanmean(all_wraperr{iM},2); % avg over folds
+    
+    % compute expected tuning curves for first cell, model 4
+    if iM == 4
+        % first, get internal HD
+        this_param = nanmean(param); % note will not work for angle (hd0)
+        cfg_hd = []; cfg_hd.hd0 = this_param(4);
+        cfg_hd.gain = [this_param(1) this_param(2)];
+        cfg_hd.drift = this_param(3);
+        internal_hd = AHVtoHD(cfg_hd,this_ahv);
+        
+        % get sdf
+        this_sim_sdf = GenerateSDFfromTC([],internal_hd,data.(cfg_param.target_session).tc);
+        
+        % now get TCs
+        tc = TuningCurvesSDF(cfg_tc,this_sim_sdf,data.(cfg_param.target_session).hd_ss);
+        tc.xbin = cfg_tc.bin_centers;
+        out.tc_fit = tc;
+        
+        % segmented
+        for iC = 1:nCells
+
+            seg = linspace(data.(fnames{iF}).sdf.tvec(1),data.(fnames{iF}).sdf.tvec(end),cfg_tc.nseg+1);
+            
+            for iSeg = 1:cfg_tc.nseg
+                this_sdf = restrict(this_sim_sdf,seg(iSeg),seg(iSeg+1));
+                this_hd = restrict(data.(cfg_param.target_session).hd_ss,seg(iSeg),seg(iSeg+1));
+                this_tc = TuningCurvesSDF(cfg_tc,this_sdf,this_hd);
+                
+                out.tc_fit_seg{iSeg} = this_tc.tc;
+            end
+            
+        end
+        
+        
+        % keep track of originals
+        out.tc_actual = data.(cfg_param.target_session).tc;
+        out.tc_actual_seg = data.(cfg_param.target_session).tc_seg;
+        
+    end
     
 end % of loop over models
 
