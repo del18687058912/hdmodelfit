@@ -25,11 +25,16 @@ targets_to_run = {'laser'};
 filters_to_run = {'smooth','kalmanwrapped'};
 %filters_to_run = {'kalmanwrapped'}%,{'smooth,'kalman','kalmanwrapped'};
 
-ALL_simparams{1} = [1 1 -1];
-ALL_simparams{2} = [1 1 -0.5];
+%ALL_simparams{1} = [1 1 -1];
+%ALL_simparams{2} = [1 1 -0.5];
+%ALL_simparams{3} = [1 1 0];
+%ALL_simparams{4} = [1 1 0.5];
+%ALL_simparams{5} = [1 1 1];
+ALL_simparams{1} = [1 0.95 0];
+ALL_simparams{2} = [1 0.975 0];
 ALL_simparams{3} = [1 1 0];
-ALL_simparams{4} = [1 1 0.5];
-ALL_simparams{5} = [1 1 -1];
+ALL_simparams{4} = [1 1.025 0];
+ALL_simparams{5} = [1 1.05 0];
 
 for iP = 1:length(ALL_simparams)
     
