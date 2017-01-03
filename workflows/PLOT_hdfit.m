@@ -1,11 +1,12 @@
-%% load ALL_out variable
+%% first, load ALL_out variable output from MASTER_hdfit.m
+addpath('D:\My_Documents\GitHub\hdmodelfit\external');
 
 %% session by session analysis
 
 whatS = {'std','laser'};
 whatF = {'kalmanwrapped'};
 
-ALL_err = nan(15,2,4);
+ALL_err = nan(15,2,4); ALL_errRaw = nan(15,2,4);
 ALL_param = nan(15,2,3); ALL_paramSD = nan(15,2,3);
 ALL_paramerr = nan(15,2,3);
 
@@ -20,6 +21,8 @@ for iFD = [5 7:10 12 14]; % sessions to analyze -- obtained from criterion in la
         
             this_data = ALL_out(iFD).(whatS{iS}).(whatF{iF});
             
+            this_mean_errRaw = nanmean(this_data.err,2);
+            
             % normalize
             m0_mean_err = nanmean(this_data.err(1,:));
             m4_mean_err = nanmean(this_data.err(4,:));
@@ -30,6 +33,7 @@ for iFD = [5 7:10 12 14]; % sessions to analyze -- obtained from criterion in la
             
             % keep track of errors
             ALL_err(iFD,iS,:) = this_mean_err;
+            ALL_errRaw(iFD,iS,:) = this_mean_errRaw;
             
             for iM = 1:4
                 this_gl_mean(iM) = nanmean(this_data.param{iM}(:,1)-1);
@@ -83,18 +87,19 @@ for iS = 1:length(whatS)
     hold on;
     plot(sq(ALL_err(:,iS,:))','.k');
     
-    set(gca,'XTick',1:4,'XTickLabel',{'M0','M1','M2','M3'}); box off;
+    set(gca,'XTick',1:4,'XTickLabel',{'M0','M1','M2','M3'},'YLim',[0 1.05],'TickDir','out','FontSize',20); box off;
     title(whatS{iS});
+    ylabel('error (normalized to M0)');
     
     %
     subplot(2,2,iS+2);
-    h = plot(sq(ALL_err(:,iS,:))');
+    h = plot(sq(ALL_errRaw(:,iS,:))');
     
-    set(gca,'XTick',1:4,'XTickLabel',{'M0','M1','M2','M3'}); box off;
+    set(gca,'XTick',1:4,'XTickLabel',{'M0','M1','M2','M3'},'TickDir','out','FontSize',20); box off;
     title(whatS{iS});
-    if iS == 1
-        legend(h,'Location','Southwest');
-    end
+    %if iS == 1
+    %    legend(h,'Location','Southwest');
+    %end
     
 end
 
