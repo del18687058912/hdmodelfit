@@ -246,12 +246,18 @@ for iM = cfg_master.models
     
     % obtain correctly shifted tuning curves - matching first segment of target
     % session (should check that looks OK)
-    switch cfg_param.data_to_fit
-        case 'sdf_ss'
-            cfg_param.tc.tc = circshift(data.(cfg_param.reference_session).tc.tc,[0 data.(cfg_param.target_session).tc_segshift(1)]);
-            cfg_param.tc.xbin = data.(cfg_param.reference_session).tc.xbin;
-        case 'sim_sdf_ss'
-            cfg_param.tc.tc = circshift(data.(cfg_param.reference_session).tc.tc,[0 data.(cfg_param.target_session).tc_segshift_sim(1)]);
+    switch cfg_param.target_session
+        case 'laser'
+            switch cfg_param.data_to_fit
+                case 'sdf_ss'
+                    cfg_param.tc.tc = circshift(data.(cfg_param.reference_session).tc.tc,[0 data.(cfg_param.target_session).tc_segshift(1)]);
+                    cfg_param.tc.xbin = data.(cfg_param.reference_session).tc.xbin;
+                case 'sim_sdf_ss'
+                    cfg_param.tc.tc = circshift(data.(cfg_param.reference_session).tc.tc,[0 data.(cfg_param.target_session).tc_segshift_sim(1)]);
+                    cfg_param.tc.xbin = data.(cfg_param.reference_session).tc.xbin;
+            end
+        case 'std' % no shift required
+            cfg_param.tc.tc = data.(cfg_param.reference_session).tc.tc;
             cfg_param.tc.xbin = data.(cfg_param.reference_session).tc.xbin;
     end
     
@@ -341,7 +347,7 @@ for iM = cfg_master.models
         % segmented
         for iC = 1:nCells
 
-            seg = linspace(data.(fnames{iF}).sdf.tvec(1),data.(fnames{iF}).sdf.tvec(end),cfg_tc.nseg+1);
+            seg = linspace(data.(cfg_param.target_session).sdf.tvec(1),data.(cfg_param.target_session).sdf.tvec(end),cfg_tc.nseg+1);
             
             for iSeg = 1:cfg_tc.nseg
                 this_sdf = restrict(this_sim_sdf,seg(iSeg),seg(iSeg+1));
